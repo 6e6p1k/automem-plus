@@ -8,6 +8,10 @@ on:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    # GitHub's macOS runners are sometimes never assigned and the job is cancelled unrun;
+    # that must not turn the run red. A real macOS test failure still shows on the job.
+    continue-on-error: ${{ startsWith(matrix.os, 'macos') }}
     strategy:
       fail-fast: false
       matrix:
