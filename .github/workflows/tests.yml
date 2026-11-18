@@ -11,8 +11,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ["3.9", "3.13"]
+        include:
+          # 3.9 is the oldest Python supported (it is what macOS ships); the newest Ubuntu image no longer offers it
+          - {os: ubuntu-24.04, python-version: "3.9"}
+          - {os: ubuntu-latest, python-version: "3.13"}
+          - {os: macos-latest, python-version: "3.13"}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

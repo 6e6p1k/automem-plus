@@ -1,4 +1,4 @@
-"""::automem promote: move a preference that isn't about this project into the user-level rules.
+"""/automem-plus:promote: move a preference that isn't about this project into the user-level rules.
 
 Auto memory is per repo, so "one subagent at most" saved in one project's memory never reaches
 the others. Promoting copies the note's text to ~/.claude/rules/automem-<name>.md, which Claude
@@ -52,7 +52,7 @@ def list_text(root):
         return "No preference-type notes (feedback or user) in this project's memory."
     lines = ["Preference notes in this project's memory. Promote the ones that are about you, not this project:", ""]
     lines += [f"  {name}  →  {desc[:110]}" for name, desc in found]
-    lines += ["", "::automem promote <file> moves one into ~/.claude/rules/, so every project gets it."]
+    lines += ["", "/automem-plus:promote <file> moves one into ~/.claude/rules/, so every project gets it."]
     return "\n".join(lines)
 
 
@@ -61,7 +61,7 @@ def promote(root, name):
     name = os.path.basename(name if name.endswith(".md") else name + ".md")
     path = os.path.join(folder, name)
     if not os.path.isfile(path) or name == constants.INDEX_FILE:
-        return f"No note {name} in this project's memory. ::automem promote lists the candidates."
+        return f"No note {name} in this project's memory. /automem-plus:promote lists the candidates."
     text = _read(path)
     fields, body = split_note(text)
     rules = os.path.join(claudecode.config_dir(), "rules")

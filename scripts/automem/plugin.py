@@ -6,7 +6,7 @@ from automem import constants, jsonfile, state, usage
 
 
 def features():
-    """features.json, with the user's on/off overrides (::automem retire, ::automem enable) applied."""
+    """features.json, with the user's on/off overrides (/automem-plus:retire, /automem-plus:enable) applied."""
     registry = jsonfile.read_json(constants.FEATURES_FILE, {}) or {}
     overrides = jsonfile.read_json(os.path.join(state.state_dir(), "feature_flags.json"), {}) or {}
     for name, entry in registry.items():
@@ -23,7 +23,7 @@ def version():
 
 
 def set_feature(name, enabled):
-    """Switch a feature on or off for this machine (::automem enable, ::automem retire)."""
+    """Switch a feature on or off for this machine (/automem-plus:enable, /automem-plus:retire)."""
     if name not in features():
         return f"No feature {name}. Features: {', '.join(features())}"
     path = os.path.join(state.state_dir(), "feature_flags.json")

@@ -116,5 +116,7 @@ def two_machines_that_wrote_the_same_note(machines):
 
 
 def assert_plain(text):
-    for mark in ("`", "**", "###", "|"):
+    """No markdown: Claude Code shows a hook's answer as plain text."""
+    for mark in ("`", "**", "###"):
         assert mark not in text, (mark, text)
+    assert not any(line.lstrip().startswith("|") for line in text.splitlines()), text  # a table row

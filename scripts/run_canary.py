@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the canary now and print its result. ::automem canary runs this in the background."""
+"""Run the canary now and print its result. /automem-plus:canary runs this in the background."""
 
 import json
 import os

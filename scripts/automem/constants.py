@@ -8,6 +8,8 @@ RULES_DIR = os.path.join(PLUGIN_ROOT, "rules")
 FEATURES_FILE = os.path.join(PLUGIN_ROOT, "features.json")
 MANIFEST_FILE = os.path.join(PLUGIN_ROOT, ".claude-plugin", "plugin.json")
 
+PLUGIN_NAME = "automem-plus"  # its slash commands are /automem-plus:<name>
+
 DISABLE_ENV = "AUTOMEM_DISABLE"  # any value switches every hook off
 STATE_ENV = "AUTOMEM_STATE"  # overrides DEFAULT_STATE_DIR
 STORE_ENV = "AUTOMEM_STORE"  # overrides DEFAULT_STORE_DIR

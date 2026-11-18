@@ -159,7 +159,7 @@ class _NoteMerge:
         self._export(rel, local_data)
 
     def _lost(self, rel, kept, saved):
-        """Both copies had content and one lost: remember where it went, for ::automem reconcile."""
+        """Both copies had content and one lost: remember where it went, for /automem-plus:reconcile."""
         if saved:
             self.report.lost.append(syncreport.LostCopy(rel, kept, saved))
 

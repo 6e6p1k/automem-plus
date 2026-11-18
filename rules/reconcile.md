@@ -1,6 +1,6 @@
 # Reconcile memory (automem-plus)
 
-The user ran `::automem reconcile`. This project's auto memory was put together from more than one machine, file by file, so notes can overlap or disagree. Unite it in two steps: propose, then apply once the user agrees.
+The user asked to reconcile this project's memory. This project's auto memory was put together from more than one machine, file by file, so notes can overlap or disagree. Unite it in two steps: propose, then apply once the user agrees.
 
 Memory folder: `{folder}`
 

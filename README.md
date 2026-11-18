@@ -4,18 +4,18 @@ A thin layer on [Claude Code](https://claude.com/claude-code)'s built-in auto me
 
 Built-in auto memory stores notes per project and loads them into each session. automem-plus doesn't replace it and keeps no notes of its own. It adds what built-in memory doesn't do: it keeps a handoff note current so the next session can continue, saves facts you mention in passing, carries notes between your machines through a git repo you own, and measures which of its own features are worth keeping.
 
-It's three hooks and a few `::` commands. It makes no model calls of its own unless you run `::automem canary`, and the notes stay ordinary auto-memory files that Claude Code reads without the plugin.
+It's three hooks and a dozen slash commands. It makes no model calls of its own unless you run the canary, and the notes stay ordinary auto-memory files that Claude Code reads without the plugin.
 
-> **Status:** early (0.6). Written and used by one person, covered by tests, and tried in real sessions on macOS. Sync has not yet been run between two real machines over a long period. See [Limits](#limits).
+> **Status:** early (0.7). Written and used by one person, covered by tests, and tried in real sessions on macOS. Sync has not yet been run between two real machines over a long period. See [Limits](#limits).
 
 ## What it adds
 
 | Built-in auto memory alone | With automem-plus |
 |---|---|
-| A "where we are" note gets written sometimes and then goes stale | **Handoff note:** one note per branch with Goal, Where we are, Tried and failed, Open decisions, Next steps. Claude rewrites it when you say you're done, after a push, or on `::handoff` |
+| A "where we are" note gets written sometimes and then goes stale | **Handoff note:** one note per branch with Goal, Where we are, Tried and failed, Open decisions, Next steps. Claude rewrites it when you say you're done, after a push, or on `/automem-plus:handoff` |
 | Facts mentioned while asking for something else aren't saved | **Passing facts:** "our CI only runs on Fridays" gets saved like an explicit "remember this" |
 | Notes live on one machine, under one clone path | **Sync:** notes travel through a private git repo, matched by the project's origin URL |
-| Two machines can leave the same fact under two names, or notes that disagree | **Reconcile:** `::automem reconcile` has Claude unite them. It proposes, you agree, it edits |
+| Two machines can leave the same fact under two names, or notes that disagree | **Reconcile:** `/automem-plus:reconcile` has Claude unite them. It proposes, you agree, it edits |
 | Nothing tells you a status note is out of date | **Nudge:** a line after a turn when you committed and the handoff is older than the commit |
 | No way to tell which memory habits pay off | **Review:** a local usage log, and a keep-or-retire suggestion per feature |
 
@@ -43,23 +43,23 @@ Restart Claude Code. To try it for one session without installing, clone the rep
 Then, in any project, type:
 
 ```text
-::automem status
+/automem-plus:status
 ```
 
-It shows whether the rules were injected, whether a handoff exists, and whether this project syncs. `::automem` alone lists every command.
+It shows whether the rules were injected, whether a handoff exists, and whether this project syncs. `/automem-plus:help` lists every command, and typing `/automem` brings them up in the menu.
 
 ## How it works
 
 | Hook | What it does | Cost |
 |---|---|---|
 | Session start | Adds the two rules to Claude's context. In a git repo that syncs, it also pulls and merges notes from the store (bounded to a few seconds) | The rules' text, about 550 tokens |
-| Your prompt | Answers `::automem ...` itself. `::handoff` and `::automem reconcile` pass through to Claude with extra instructions | None for the answered ones |
+| Your prompt | Sees the plugin's commands before Claude does. It answers most of them itself and blocks the prompt; `handoff` and `reconcile` pass through to Claude with extra instructions | None for the answered ones: no model turn, and nothing added to Claude's context |
 | End of each turn | Reads the transcript for which notes were read or written, shows a notice if one applies, and pushes notes in the background if any changed | None |
 
 The notices after a turn are one line each, shown to you and not to Claude:
 
 - you committed and the handoff note is older than the commit;
-- a sync found notes that differ between machines, so `::automem reconcile` has something to do;
+- a sync found notes that differ between machines, so `/automem-plus:reconcile` has something to do;
 - Claude Code was updated, so the canary may be worth running;
 - a month of usage is logged, so a review is due.
 
@@ -69,7 +69,7 @@ The plugin never writes or edits a note. Claude does, following the rules, into 
 
 The rule tells Claude to keep one note for the work in this session: `handoff-<branch>.md` in a git repo (worktrees share one memory folder, so each branch gets its own), plain `handoff.md` elsewhere.
 
-- **Updated** when you say you're done for now, after a push, and on `::handoff`. It's rewritten in place.
+- **Updated** when you say you're done for now, after a push, and on `/automem-plus:handoff`. It's rewritten in place.
 - **Read** at the start of a session when your first message is about continuing, and checked against `git log`.
 - **Folded:** an older status note about the same work is merged into it and removed. Handoffs of branches that no longer exist are pointed out at session start.
 
@@ -79,9 +79,9 @@ Nothing forces Claude to do this. It's an instruction, backed by the nudge and m
 
 Sync is off until you create the store, a git repo at `~/.claude/memory-store/`.
 
-1. Create a **private** repo on your git host, then: `::automem store <git-url>`. Without a remote, `::automem store init` makes a local store.
-2. Say whose repos sync: `::automem owner <your-github-name>`. Projects whose origin belongs to that account then sync automatically.
-3. For any other project: `::automem sync on` opts it in, `::automem sync off` keeps it local-only.
+1. Create a **private** repo on your git host, then: `/automem-plus:store <git-url>`. Without a remote, `/automem-plus:store init` makes a local store.
+2. Say whose repos sync: `/automem-plus:owner <your-github-name>`. Projects whose origin belongs to that account then sync automatically.
+3. For any other project: `/automem-plus:sync on` opts it in, `/automem-plus:sync off` keeps it local-only.
 
 On a second machine, install the plugin and run step 1 with the same URL. The owner list comes with the store.
 
@@ -105,7 +105,7 @@ On a second machine, install the plugin and run step 1 with the same URL. The ow
 A file merge can't see that two notes say the same thing, or that they disagree. After two machines' notes have been brought together, run this on the machine that joined second:
 
 ```text
-::automem reconcile
+/automem-plus:reconcile
 ```
 
 Claude gets the copies that lost a file conflict (quoted, up to 20 copies of 6,000 characters each), the names of the notes that arrived from the other machine, and these rules:
@@ -122,25 +122,31 @@ Run it where the two copies met: the copy that lost is saved only on that machin
 
 Each feature in [`features.json`](features.json) declares up front what "used" means and when it should be retired.
 
-- **`::automem review`** reads the local usage log and gives each feature a verdict: collecting data, keep, or retire. You decide: `::automem retire <feature>`, `::automem enable <feature>`.
-- **`::automem canary`** checks whether built-in memory now does a feature without the plugin. It makes six short Haiku calls in throwaway repos (about $0.07) with the plugin switched off, and deletes those repos and their memory afterwards. It runs only when you ask.
+- **`/automem-plus:review`** reads the local usage log and gives each feature a verdict: collecting data, keep, or retire. You decide with `/automem-plus:retire <feature>` and `/automem-plus:enable <feature>`.
+- **`/automem-plus:canary`** checks whether built-in memory now does a feature without the plugin. It makes six short Haiku calls in throwaway repos (about $0.07) with the plugin switched off, and deletes those repos and their memory afterwards. It runs only when you ask.
 
 ## Commands
 
-| Command | What it does |
-|---|---|
-| `::handoff` | Claude updates the handoff note now |
-| `::automem status` | Is it working here: rules, handoff, sync, anything waiting |
-| `::automem review` | Which features and notes earn their keep |
-| `::automem reconcile` | Claude unites memory merged from several machines. `reconcile all` repeats copies from earlier runs |
-| `::automem sync` | This repo's sync. `sync on` opts it in, `sync off` keeps it local-only |
-| `::automem store <git-url>` | Clone your store repo. `store init` makes a local one |
-| `::automem owner <github-name>` | Repos owned by this account sync automatically |
-| `::automem promote` | List preference notes. `promote <note>` moves one into `~/.claude/rules/`, so every project gets it |
-| `::automem retire <feature>` | Turn a feature off. `enable <feature>` turns it back on |
-| `::automem canary` | Check whether built-in memory now covers these features |
+| Command | What it does | Answered by |
+|---|---|---|
+| `/automem-plus:handoff` | Claude updates the handoff note now | Claude |
+| `/automem-plus:status` | Is it working here: rules, handoff, sync, anything waiting | the hook |
+| `/automem-plus:review` | Which features and notes earn their keep | the hook |
+| `/automem-plus:reconcile [all]` | Claude unites memory merged from several machines. `all` repeats copies from earlier runs | Claude |
+| `/automem-plus:sync [on\|off]` | This repo's sync. `on` opts it in, `off` keeps it local-only | the hook |
+| `/automem-plus:store <git-url>\|init` | Clone your store repo. `init` makes a local one | the hook |
+| `/automem-plus:owner <github-name>` | Repos owned by this account sync automatically | the hook |
+| `/automem-plus:promote [<note>]` | List preference notes, or move one into `~/.claude/rules/` so every project gets it | the hook |
+| `/automem-plus:retire <feature>` | Turn a feature off | the hook |
+| `/automem-plus:enable <feature>` | Turn a feature back on | the hook |
+| `/automem-plus:canary` | Check whether built-in memory now covers these features | the hook |
+| `/automem-plus:help` | This list | the hook |
 
-Answers are plain text, because Claude Code shows a hook's answer without rendering markdown.
+**Why two kinds.** A plugin's slash command is normally a prompt handed to Claude, which costs a model turn. For everything that is only a lookup or a setting, the prompt hook answers first and blocks the prompt, so the command costs no tokens and leaves nothing in Claude's context. The commands still exist as skills, which is what puts them in the `/` menu.
+
+**Short form.** Every command also works as `::automem <name>`, and the handoff as `::handoff`. The hook treats both spellings the same.
+
+Answers from the hook are plain text, because Claude Code shows them without rendering markdown. Claude Code frames them as a prompt "blocked by hook"; that wording is its own, not an error.
 
 ## Configuration
 
@@ -149,7 +155,7 @@ Answers are plain text, because Claude Code shows a hook's answer without render
 | `AUTOMEM_DISABLE` | unset | Any non-empty value switches every hook off for that process |
 | `AUTOMEM_STORE` | `~/.claude/memory-store` | The store repo |
 | `AUTOMEM_STATE` | `~/.claude/memory-state/automem` | Machine-local state: usage log, sync bases, backups |
-| `features.json` | all on | The features and their retire rules. `::automem retire` and `enable` keep your choice in the state folder |
+| `features.json` | all on | The features and their retire rules. The `retire` and `enable` commands keep your choice in the state folder |
 
 Thresholds such as "a working session is three or more prompts" are named in [`scripts/automem/constants.py`](scripts/automem/constants.py).
 
@@ -173,7 +179,7 @@ Thresholds such as "a working session is three or more prompts" are named in [`s
 
 ## Troubleshooting
 
-- **Nothing happens.** Run `::automem status`. If auto memory is off for the project, the plugin stays out of the way by design.
+- **Nothing happens.** Run `/automem-plus:status`. If auto memory is off for the project, the plugin stays out of the way by design.
 - **A hook error mentions `python3`.** It isn't on the PATH Claude Code sees.
 - **Status says a push failed.** The commit is safe in the local store; the next sync retries. Check that `git push` works in `~/.claude/memory-store`.
 - **You want it off for one command or script.** Set `AUTOMEM_DISABLE=1`. To turn it off everywhere, `claude plugin disable automem-plus@automem-plus`.
@@ -183,6 +189,7 @@ Thresholds such as "a working session is three or more prompts" are named in [`s
 
 ```text
 hooks/hooks.json        the three hooks
+skills/                 one per command, so each shows in the / menu
 rules/                  the texts Claude is given
 features.json           each feature's "used" measure and retire rule
 scripts/*.py            hook entry points and two background jobs

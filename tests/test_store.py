@@ -9,7 +9,7 @@ from helpers import git, write
 def test_sync_status_rules(repo, env):
     assert not store.sync_status(repo)[0]  # no store
     assert "Store ready" in store.create_store("init")
-    assert store.sync_status(repo) == (False, "not your repo (::automem sync on opts it in)")
+    assert store.sync_status(repo) == (False, "not your repo (/automem-plus:sync on opts it in)")
     assert "now sync" in store.add_owner("Me")
     assert store.sync_status(repo)[0]
     store.set_repo(repo, False)

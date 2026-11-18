@@ -1,4 +1,9 @@
-"""The ::automem commands that are answered by the hook itself and never reach Claude.
+"""The plugin's commands, and the ones the hook answers itself without reaching Claude.
+
+Each command can be typed two ways: /automem-plus:<name> (a real slash command, so it shows in the
+/ menu) or ::automem <name>. Either way the prompt hook sees the text first. For every command but
+handoff and reconcile it answers and blocks the prompt, which costs no tokens and leaves nothing
+in Claude's context.
 
 Claude Code shows a hook's answer as plain text (no markdown, and maybe no fixed-width font), so
 answers are laid out with line breaks, short labels and a few marks, never with columns or markup.
@@ -7,62 +12,56 @@ answers are laid out with line breaks, short labels and a few marks, never with 
 import os
 import subprocess
 import sys
+from typing import NamedTuple
 
 from automem import canary, constants, gitrepo, handoff, plugin, promote, review, status, store
 
+
+class Command(NamedTuple):
+    name: str
+    args: str  # the argument hint, as the skill's frontmatter shows it
+    what: str
+
+
 GROUPS = [
-    (
-        "Every day",
-        [
-            ("::handoff", "Claude updates the handoff note now"),
-            ("::automem status", "is it working here: rules, handoff, sync, anything waiting"),
-            ("::automem review", "which features and notes earn their keep (no model call)"),
-        ],
-    ),
-    (
-        "Several machines",
-        [
-            (
-                "::automem reconcile",
-                'Claude unites memory merged from several machines; "reconcile all" repeats earlier copies',
-            ),
-            ("::automem sync", 'this repo\'s sync; "sync on" opts it in, "sync off" keeps it local-only'),
-        ],
-    ),
-    (
-        "Setup",
-        [
-            ("::automem store <git-url>", 'clone your private store repo; "store init" makes a local one'),
-            ("::automem owner <github-name>", "repos owned by this account sync automatically"),
-        ],
-    ),
-    (
-        "Tuning",
-        [
-            (
-                "::automem promote",
-                'list preference notes; "promote <note>" moves one into ~/.claude/rules/ for every project',
-            ),
-            ("::automem retire <feature>", 'turn a feature off; "enable <feature>" turns it back on'),
-            (
-                "::automem canary",
-                f"check whether built-in auto memory now covers these features ({constants.CANARY_COST})",
-            ),
-        ],
-    ),
-]
+    ("Every day", [
+        Command("handoff", "", "Claude updates the handoff note now"),
+        Command("status", "", "is it working here: rules, handoff, sync, anything waiting"),
+        Command("review", "", "which features and notes earn their keep (no model call)"),
+    ]),
+    ("Several machines", [
+        Command("reconcile", "[all]", 'Claude unites memory merged from several machines; "all" repeats old copies'),
+        Command("sync", "[on|off]", 'this repo\'s sync; "on" opts it in, "off" keeps it local-only'),
+    ]),
+    ("Setup", [
+        Command("store", "<git-url>|init", 'clone your private store repo; "init" makes a local one'),
+        Command("owner", "<github-name>", "repos owned by this account sync automatically"),
+    ]),
+    ("Tuning", [
+        Command("promote", "[<note>]", "list preference notes, or move one into ~/.claude/rules/ for every project"),
+        Command("retire", "<feature>", "turn a feature off"),
+        Command("enable", "<feature>", "turn a feature back on"),
+        Command("canary", "", f"check whether built-in memory now covers these features ({constants.CANARY_COST})"),
+    ]),
+    ("Help", [
+        Command("help", "", "this list"),
+    ]),
+]  # fmt: skip
+
+
+def spelled(name, args=""):
+    """A command the way the user types it."""
+    return f"/{constants.PLUGIN_NAME}:{name}" + (f" {args}" if args else "")
 
 
 def overview(unknown=""):
-    lines = [f"::automem {unknown} isn't a command here, or it's missing an argument.", ""] if unknown else []
+    lines = [f"{spelled(unknown)} isn't a command here, or it's missing an argument.", ""] if unknown else []
     lines.append(f"automem-plus {plugin.version()} · a thin layer on Claude Code's built-in auto memory")
     for title, commands in GROUPS:
-        lines += ["", title] + [f"  {command}  →  {what}" for command, what in commands]
-    lines += [
-        "",
-        "Features: "
-        + " · ".join(f"{name} {'on' if entry.get('enabled') else 'OFF'}" for name, entry in plugin.features().items()),
-    ]
+        lines += ["", title] + [f"  {spelled(c.name, c.args)}  →  {c.what}" for c in commands]
+    lines += ["", "Each one also works as ::automem <name>, and the handoff as ::handoff."]
+    lines += ["", "Features: " + " · ".join(f"{name} {'on' if entry.get('enabled') else 'OFF'}"
+                                            for name, entry in plugin.features().items())]  # fmt: skip
     return "\n".join(lines)
 
 
@@ -121,7 +120,7 @@ def _canary(args, cwd):
     )
     return (
         f"Canary started in the background (six short calls, {constants.CANARY_COST}). "
-        "::automem review shows the result."
+        "/automem-plus:review shows the result."
     )
 
 
@@ -139,11 +138,10 @@ COMMANDS = {  # name: (handler, how many arguments it takes)
 }
 
 
-def run(text, cwd):
-    """The answer to ::automem <text>. Anything that isn't a complete command gets the overview."""
-    words = text.split()
-    name = words[0].lower() if words else ""
+def run(name, args, cwd):
+    """The answer to one of the commands the hook answers. Anything that isn't a complete command
+    gets the overview."""
     handler, arity = COMMANDS.get(name, (None, ()))
-    if handler and (arity is ANY or len(words) - 1 in arity):
-        return handler(words[1:], cwd)
-    return overview("" if name in ("", "help") else text)
+    if handler and (arity is ANY or len(args) in arity):
+        return handler(args, cwd)
+    return overview("" if name == "help" else " ".join([name, *args]))

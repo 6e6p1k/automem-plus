@@ -25,10 +25,10 @@ def test_reconcile_command_hands_claude_the_lost_copies_and_the_rules(machines):
     assert "Change nothing until" in context and handoff.handoff_name(gitrepo.branch(b.repo)) in context
     # a second run doesn't repeat what was already handed over, but says how to get it back
     again = run_hook("prompt.py", payload)["hookSpecificOutput"]["additionalContext"]
-    assert backup not in again and "::automem reconcile all" in again
+    assert backup not in again and "/automem-plus:reconcile all" in again
     everything = run_hook("prompt.py", dict(payload, prompt="::automem reconcile all"))
     assert backup in everything["hookSpecificOutput"]["additionalContext"]
-    # the other ::automem commands still answer directly instead of reaching Claude
+    # the other commands still answer directly instead of reaching Claude
     assert run_hook("prompt.py", dict(payload, prompt="::automem status"))["decision"] == "block"
 
 

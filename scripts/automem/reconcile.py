@@ -1,4 +1,4 @@
-"""::automem reconcile: have Claude unite memory that was merged from more than one machine.
+"""/automem-plus:reconcile: have Claude unite memory that was merged from more than one machine.
 
 Sync merges file by file and never looks inside a note, so two machines can leave the same fact
 under two names, notes that disagree, or a copy that lost a same-name conflict sitting in the
@@ -90,7 +90,7 @@ def context(root, handoff_file, show_all=False):
     if earlier:
         conflicts_text += (
             f"\n{earlier} saved cop{'y was' if earlier == 1 else 'ies were'} handed over in an earlier "
-            f"run; `::automem reconcile all` lists them again."
+            f"run; `/automem-plus:reconcile all` lists them again."
         )
     names = arrived(root, since)
     if names:
@@ -122,5 +122,5 @@ def nudge_line(root):
     count = len({entry["file"] for entry in waiting})
     return (
         f"🔀 {count} note{'' if count == 1 else 's'} differed between this machine and the memory store; both "
-        f"copies are kept. ::automem reconcile has Claude unite them."
+        f"copies are kept. /automem-plus:reconcile has Claude unite them."
     )

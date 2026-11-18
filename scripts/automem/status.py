@@ -1,4 +1,4 @@
-"""The text of ::automem status: is it working here? Everything that otherwise fails silently."""
+"""The text of /automem-plus:status: is it working here? Everything that otherwise fails silently."""
 
 import os
 import time
@@ -45,7 +45,7 @@ def sync_lines(label, record):
 
 
 def describe(root=None, handoff_file=None):
-    """::automem status: is it working here? Everything that otherwise fails silently. One line per
+    """/automem-plus:status: is it working here? Everything that otherwise fails silently. One line per
     thing, each starting with a mark, so it reads at a glance without markup or columns.
     With a project root, sync is reported for that project; the machine's latest sync of another
     project is shown as exactly that, so it can't pass for this one's."""
@@ -69,7 +69,7 @@ def describe(root=None, handoff_file=None):
             lines.append(
                 f"{OK} Handoff: {handoff_file}, updated {ago(os.path.getmtime(path))}"
                 if os.path.exists(path)
-                else f"{IDLE} Handoff: none yet (::handoff writes {handoff_file})"
+                else f"{IDLE} Handoff: none yet (/automem-plus:handoff writes {handoff_file})"
             )
         on, why = store.sync_status(root) if gitrepo.repo_root(root) else (False, "this folder isn't a git repo")
         lines.append(f"{OK if on else IDLE} Sync here: {'on' if on else 'off'}, {why}")
@@ -90,7 +90,7 @@ def describe(root=None, handoff_file=None):
         if waiting:
             lines.append(
                 f"{WARN} Waiting for reconcile: {waiting} note{'' if waiting == 1 else 's'} differed between "
-                f"machines (::automem reconcile has Claude unite them)"
+                f"machines (/automem-plus:reconcile has Claude unite them)"
             )
     if not latest:
         lines.append(f"{IDLE} Sync hasn't run on this machine.")

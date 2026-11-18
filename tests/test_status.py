@@ -38,7 +38,7 @@ def test_status_shows_version_handoff_and_what_waits(machines):
     name = handoff.handoff_name(gitrepo.branch(b.repo))
     text = status.describe(b.repo, name)
     assert text.startswith(f"automem-plus {plugin.version()} · {os.path.basename(b.repo)}\n\n")
-    assert f"⚪ Handoff: none yet (::handoff writes {name})" in text
+    assert f"⚪ Handoff: none yet (/automem-plus:handoff writes {name})" in text
     assert "⚠️ Waiting for reconcile: 1 note differed" in text and "both machines changed ci.md" in text
     assert all(line[:1] in ("✅", "⚠", "⚪", " ") for line in text.splitlines()[2:])  # every line starts with a mark
     b.write(name, "state\n")

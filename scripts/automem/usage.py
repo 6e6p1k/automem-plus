@@ -1,5 +1,5 @@
 """The usage log: one line per event, with file names and a repo hash but never any content.
-It is what ::automem review judges features by. Machine-local, never synced.
+It is what /automem-plus:review judges features by. Machine-local, never synced.
 """
 
 import json

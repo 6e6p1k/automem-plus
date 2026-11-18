@@ -27,7 +27,7 @@ def staleness_line(root, folder, session_state):
     usage.log_usage("staleness_nudge", "shown", repo=gitrepo.repo_hash(root), session=session_state.get("session", ""))
     return (
         "📝 New commits since this session started, but the handoff note is older than the latest one. "
-        "Say ::handoff to update it."
+        "Say /automem-plus:handoff to update it."
     )
 
 
@@ -44,7 +44,7 @@ def version_line(session_state):
     if not previous:
         return None  # the first version this machine has seen: nothing changed
     return (
-        f"🔬 Claude Code updated ({previous} → {version}). ::automem canary checks whether built-in "
+        f"🔬 Claude Code updated ({previous} → {version}). /automem-plus:canary checks whether built-in "
         f"auto memory now covers what automem-plus adds ({constants.CANARY_COST})."
     )
 
@@ -61,7 +61,7 @@ def review_line():
         return None
     seen["nudged"] = round(time.time())
     jsonfile.write_json(path, seen)
-    return "📊 A month of memory usage is logged: ::automem review shows what's worth keeping."
+    return "📊 A month of memory usage is logged: /automem-plus:review shows what's worth keeping."
 
 
 def reconcile_line(root):

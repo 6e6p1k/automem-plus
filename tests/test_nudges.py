@@ -76,7 +76,7 @@ def test_stop_line_offers_reconcile_once_after_a_conflict(machines):
     write_transcript(tpath, [user_prompt("hi")])
     payload = {"session_id": "n1", "cwd": b.repo, "transcript_path": tpath}
     first = run_hook("stop.py", payload)
-    assert "::automem reconcile" in first["systemMessage"] and "1 note" in first["systemMessage"]
+    assert "/automem-plus:reconcile" in first["systemMessage"] and "1 note" in first["systemMessage"]
     assert run_hook("stop.py", payload) is None
     a.use()
     write_transcript(os.path.join(str(a.dir), "t.jsonl"), [user_prompt("hi")])

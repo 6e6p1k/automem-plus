@@ -64,8 +64,8 @@ def lost_copy_log():
 
 
 def record(root, report):
-    """Write down what this sync did: the status ::automem status reads, the copies that lost a
-    conflict (for ::automem reconcile), and the usage log."""
+    """Write down what this sync did: the status /automem-plus:status reads, the copies that lost a
+    conflict (for /automem-plus:reconcile), and the usage log."""
     rid = gitrepo.repo_hash(root)
     status = {
         "ts": round(time.time()),

@@ -5,7 +5,7 @@ from typing import NamedTuple, Optional
 
 
 class LostCopy(NamedTuple):
-    """A note two machines both wrote: one copy was kept, the other saved for ::automem reconcile."""
+    """A note two machines both wrote: one copy was kept, the other saved for /automem-plus:reconcile."""
 
     file: str  # the note, relative to the memory folder
     kept: str  # "local" or "store": whose copy stayed in the folder

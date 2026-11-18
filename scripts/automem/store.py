@@ -41,11 +41,11 @@ def save_config(cfg, message):
 def sync_status(root):
     """(on, why) for this repo."""
     if not plugin.feature_on("sync"):
-        return False, "sync is retired (::automem enable sync turns it back on)"
+        return False, "sync is retired (/automem-plus:enable sync turns it back on)"
     if not store_ready():
         return False, (
-            f"there's no store at {state.store_dir()} yet (::automem store <git-url> clones one, "
-            f"::automem store init makes a local one)"
+            f"there's no store at {state.store_dir()} yet (/automem-plus:store <git-url> clones one, "
+            f"/automem-plus:store init makes a local one)"
         )
     custom_scope = claudecode.setting_scope(root, "autoMemoryDirectory")
     if custom_scope in ("user", "project"):
@@ -61,7 +61,7 @@ def sync_status(root):
     owner = key.split("/")[1] if key.count("/") >= 2 else ""
     if owner in cfg["owners"]:
         return True, f"the repo owner {owner} is yours"
-    return False, "not your repo (::automem sync on opts it in)"
+    return False, "not your repo (/automem-plus:sync on opts it in)"
 
 
 def folder_name(key):
@@ -92,8 +92,8 @@ def set_repo(root, on):
     key = gitrepo.remote_key(root)
     if not store_ready():
         return (
-            f"No store at {state.store_dir()} yet: ::automem store <git-url> clones one, "
-            "::automem store init makes a local one."
+            f"No store at {state.store_dir()} yet: /automem-plus:store <git-url> clones one, "
+            "/automem-plus:store init makes a local one."
         )
     if not key:
         return "This repo has no origin remote, so it can't be matched across machines."
@@ -107,7 +107,7 @@ def set_repo(root, on):
 
 def add_owner(name):
     if not store_ready():
-        return "No store yet: ::automem store <git-url> clones one, ::automem store init makes a local one."
+        return "No store yet: /automem-plus:store <git-url> clones one, /automem-plus:store init makes a local one."
     cfg = config()
     if name.lower() not in cfg["owners"]:
         cfg["owners"].append(name.lower())
@@ -130,7 +130,7 @@ def create_store(source):
     if not os.path.exists(os.path.join(path, CONFIG_NAME)):
         save_config({"owners": [], "include": [], "exclude": []}, "automem: config")
     return (
-        f"Store ready at {path}. Next: ::automem owner <your-github-name>, so your own repos sync"
+        f"Store ready at {path}. Next: /automem-plus:owner <your-github-name>, so your own repos sync"
         + ("" if source != "init" else ", and add a private remote there to sync between machines")
         + "."
     )

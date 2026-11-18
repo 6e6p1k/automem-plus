@@ -1,8 +1,8 @@
-"""::automem review: which features and notes earn their keep. No model call; nothing changes by itself.
+"""/automem-plus:review: which features and notes earn their keep. No model call; nothing changes by itself.
 
 Each feature in features.json declares what "used" means and a kill rule, fixed up front.
 The review measures that from the local usage log and suggests keep or retire; the user
-decides (::automem retire <feature>, ::automem enable <feature>).
+decides (/automem-plus:retire <feature>, /automem-plus:enable <feature>).
 """
 
 import os
@@ -179,6 +179,6 @@ def report(now=None):
             f"Last canary: {time.strftime('%Y-%m-%d', time.localtime(canary.get('ts', 0)))}, "
             f"Claude Code {canary.get('version')}, ${canary.get('cost', 0):.3f}: {results}",
         ]
-    lines += ["", "Change a feature: ::automem retire <feature> or ::automem enable <feature>"]
+    lines += ["", "Change a feature: /automem-plus:retire <feature> or /automem-plus:enable <feature>"]
     jsonfile.write_json(os.path.join(state.state_dir(), "review.json"), {"reviewed": round(now)})
     return "\n".join(lines)
