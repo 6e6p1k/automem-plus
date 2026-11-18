@@ -1,0 +1,14 @@
+{
+  "description": "automem-plus: handoff and passing-facts rules for built-in auto memory, a staleness nudge, usage log, sync",
+  "hooks": {
+    "SessionStart": [
+      {"hooks": [{"type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/session_start.py\"", "timeout": 15}]}
+    ],
+    "UserPromptSubmit": [
+      {"hooks": [{"type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/prompt.py\"", "timeout": 10}]}
+    ],
+    "Stop": [
+      {"hooks": [{"type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/stop.py\"", "timeout": 15}]}
+    ]
+  }
+}

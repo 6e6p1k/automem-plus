@@ -1,0 +1,19 @@
+{
+  "name": "automem-plus",
+  "version": "0.6.0",
+  "description": "A thin layer on Claude Code's built-in auto memory: a handoff note that carries work between sessions, facts mentioned in passing, git-backed sync between machines with a reconcile pass, and a usage review that retires what isn't used.",
+  "author": {
+    "name": "6e6p1k",
+    "url": "https://github.com/6e6p1k"
+  },
+  "homepage": "https://github.com/6e6p1k/automem-plus",
+  "repository": "https://github.com/6e6p1k/automem-plus",
+  "license": "MIT",
+  "keywords": [
+    "memory",
+    "auto-memory",
+    "handoff",
+    "sync",
+    "hooks"
+  ]
+}

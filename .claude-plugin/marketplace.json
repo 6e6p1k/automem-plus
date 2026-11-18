@@ -1,0 +1,14 @@
+{
+  "name": "automem-plus",
+  "description": "automem-plus: a thin layer on Claude Code's built-in auto memory",
+  "owner": {
+    "name": "6e6p1k"
+  },
+  "plugins": [
+    {
+      "name": "automem-plus",
+      "source": "./",
+      "description": "Handoff notes, facts mentioned in passing, sync between machines and a usage review, on top of built-in auto memory"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+ "handoff_rule": {
+  "what": "Rule: keep one handoff note in auto memory, updated on wrap-up phrases, pushes and ::handoff",
+  "used": "a working session (3+ prompts) that starts with a handoff reads it within its first 3 prompts",
+  "kill": {
+   "metric": "early_read_rate",
+   "below": 0.3,
+   "min_sample": 20
+  },
+  "canary": "handoff_without_rule",
+  "enabled": true
+ },
+ "passing_facts_rule": {
+  "what": "Rule: save lasting project facts the user mentions in passing",
+  "used": "no cheap measure: facts in index lines are never Read. Judged by the canary and by junk notes the user deletes",
+  "kill": null,
+  "canary": "passing_facts",
+  "enabled": true
+ },
+ "staleness_nudge": {
+  "what": "Stop line: new commits since the session started, but the handoff note is older than the latest",
+  "used": "the handoff note is written later in the same session",
+  "kill": {
+   "metric": "follow_rate",
+   "below": 0.1,
+   "min_sample": 10
+  },
+  "canary": null,
+  "enabled": true
+ },
+ "sync": {
+  "what": "Three-way sync of auto memory folders through the git store, keyed by git remote",
+  "used": "notes arrive with new content from another machine",
+  "kill": {
+   "metric": "arrivals_per_30_days",
+   "below": 1,
+   "min_sample": 1
+  },
+  "canary": "cross_clone",
+  "enabled": true
+ }
+}
