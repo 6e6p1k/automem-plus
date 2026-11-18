@@ -2,7 +2,7 @@ import os
 import shutil
 
 from automem import store, sync
-from helpers import read, write
+from helpers import FAKE_API_KEY_LINE, read, write
 
 
 def test_same_note_edited_on_both_with_unpushed_work_keeps_everything(machines):
@@ -54,7 +54,7 @@ def test_recreated_store_doesnt_delete_local_notes(machines, env):
 
 def test_local_only_index_lines_survive_a_store_index_change(machines):
     a, b = machines("a"), machines("b")
-    a.use().write("leak.md", "api_key = sk-ant-abcdefghijklmnopqrstuvwxyz123\n")
+    a.use().write("leak.md", FAKE_API_KEY_LINE + "\n")
     a.write("ci.md", "CI on Fridays\n")
     a.write("MEMORY.md", "- [Leak](leak.md) — the key\n- [CI](ci.md) — Fridays\n")
     a.sync()

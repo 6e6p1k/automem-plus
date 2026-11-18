@@ -1,4 +1,5 @@
 import os
+import re
 
 import helpers
 import pytest
@@ -103,6 +104,8 @@ def test_every_command_is_a_skill_and_every_skill_a_command():
     assert read(os.path.join(root, ".claude-plugin", "plugin.json")).count(f'"name": "{constants.PLUGIN_NAME}"') == 1
     for name, command in listed.items():
         front = read(os.path.join(root, "skills", name, "SKILL.md")).split("---")[1]
-        assert f"\nname: {name}\n" in front and "\ndescription: " in front
+        assert f"\nname: {name}\n" in front
+        description = next(line for line in front.splitlines() if line.startswith("description: "))
+        assert re.fullmatch(r'description: "[^"\\]+"', description)  # quoted, so a ": " inside is not read as a key
         assert "\ndisable-model-invocation: true\n" in front  # never loaded into context unless the user runs it
         assert (f'\nargument-hint: "{command.args}"\n' in front) == bool(command.args)

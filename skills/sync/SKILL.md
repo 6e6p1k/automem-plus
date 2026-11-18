@@ -1,6 +1,6 @@
 ---
 name: sync
-description: Show whether this repo's notes sync between machines, or switch that on or off.
+description: "Show whether this repo's notes sync between machines, or switch that on or off."
 argument-hint: "[on|off]"
 disable-model-invocation: true
 ---

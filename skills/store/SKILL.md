@@ -1,6 +1,6 @@
 ---
 name: store
-description: Set up the git repo that carries auto-memory notes between machines.
+description: "Set up the git repo that carries auto-memory notes between machines."
 argument-hint: "<git-url>|init"
 disable-model-invocation: true
 ---

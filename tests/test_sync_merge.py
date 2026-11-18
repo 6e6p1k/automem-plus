@@ -5,7 +5,7 @@ import subprocess
 import time
 
 from automem import claudecode, locks, merge, store, sync
-from helpers import git, read, run_hook, write
+from helpers import FAKE_API_KEY_LINE, FAKE_PASSWORD_LINE, git, read, run_hook, write
 
 
 def test_union_index_dedupes_by_link():
@@ -95,9 +95,9 @@ def test_deletion_propagates_with_a_backup(machines):
 
 def test_secrets_and_their_index_lines_stay_local(machines):
     a, b = machines("a"), machines("b")
-    a.use().write("leak.md", "api_key = sk-ant-abcdefghijklmnopqrstuvwxyz123\n")
+    a.use().write("leak.md", FAKE_API_KEY_LINE + "\n")
     a.write("ok.md", "token: refresh it every hour\n")  # prose, not a secret
-    a.write("MEMORY.md", "- [Leak](leak.md) — the key\n- [Ok](ok.md) — tokens\n- password: hunter2hunter2hunter2\n")
+    a.write("MEMORY.md", f"- [Leak](leak.md) — the key\n- [Ok](ok.md) — tokens\n- {FAKE_PASSWORD_LINE}\n")
     report = a.sync()
     assert report.skipped == ["leak.md"]
     b.sync()

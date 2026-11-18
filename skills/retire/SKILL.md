@@ -1,6 +1,6 @@
 ---
 name: retire
-description: Switch an automem-plus feature off.
+description: "Switch an automem-plus feature off."
 argument-hint: "<feature>"
 disable-model-invocation: true
 ---

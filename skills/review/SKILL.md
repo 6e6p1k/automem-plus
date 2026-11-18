@@ -1,6 +1,6 @@
 ---
 name: review
-description: Show which automem-plus features and notes earn their keep, from the local usage log.
+description: "Show which automem-plus features and notes earn their keep, from the local usage log."
 disable-model-invocation: true
 ---
 

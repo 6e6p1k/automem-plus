@@ -1,6 +1,6 @@
 ---
 name: canary
-description: Check whether built-in auto memory now covers what automem-plus adds (six short Haiku calls).
+description: "Check whether built-in auto memory now covers what automem-plus adds (six short Haiku calls)."
 disable-model-invocation: true
 ---
 

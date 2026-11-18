@@ -1,6 +1,6 @@
 ---
 name: promote
-description: List preference notes, or move one into the user-level rules so every project gets it.
+description: "List preference notes, or move one into the user-level rules so every project gets it."
 argument-hint: "[<note>]"
 disable-model-invocation: true
 ---

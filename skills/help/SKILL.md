@@ -1,6 +1,6 @@
 ---
 name: help
-description: List the automem-plus commands.
+description: "List the automem-plus commands."
 disable-model-invocation: true
 ---
 

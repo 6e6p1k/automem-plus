@@ -11,6 +11,12 @@ from automem import claudecode, sync
 SCRIPTS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts")
 
 
+# Made-up credentials for the secret-scan tests. They are put together here so that no file in the
+# repo holds a string that looks like a real key.
+FAKE_API_KEY_LINE = "api_key = " + "sk-" + "ant-" + "abcdefghijklmnopqrstuvwxyz123"
+FAKE_PASSWORD_LINE = "pass" + "word: " + "hunter2" * 3
+
+
 def read(path):
     with open(path) as f:
         return f.read()

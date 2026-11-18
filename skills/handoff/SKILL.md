@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Update this session's handoff note now, so the next session can continue.
+description: "Update this session's handoff note now, so the next session can continue."
 disable-model-invocation: true
 ---
 

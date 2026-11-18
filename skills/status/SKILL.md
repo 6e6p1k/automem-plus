@@ -1,6 +1,6 @@
 ---
 name: status
-description: Show whether automem-plus is working in this project: rules, handoff, sync, anything waiting.
+description: "Show whether automem-plus is working in this project: rules, handoff, sync, anything waiting."
 disable-model-invocation: true
 ---
 

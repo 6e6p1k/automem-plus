@@ -1,6 +1,6 @@
 ---
 name: enable
-description: Switch an automem-plus feature back on.
+description: "Switch an automem-plus feature back on."
 argument-hint: "<feature>"
 disable-model-invocation: true
 ---

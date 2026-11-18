@@ -1,6 +1,6 @@
 ---
 name: owner
-description: Make every repo owned by a GitHub account sync its notes automatically.
+description: "Make every repo owned by a GitHub account sync its notes automatically."
 argument-hint: "<github-name>"
 disable-model-invocation: true
 ---

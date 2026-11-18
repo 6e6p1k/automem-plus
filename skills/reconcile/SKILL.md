@@ -1,6 +1,6 @@
 ---
 name: reconcile
-description: Unite auto memory that was merged from several machines: duplicates, notes that disagree, copies that lost a conflict.
+description: "Unite auto memory that was merged from several machines: duplicates, notes that disagree, copies that lost a conflict."
 argument-hint: "[all]"
 disable-model-invocation: true
 ---
