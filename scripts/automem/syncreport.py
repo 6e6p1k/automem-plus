@@ -26,3 +26,4 @@ class SyncReport:
     # None (nothing pushed), "pushed", "pushed after merge", "push failed", "conflict" or "commit failed"
     push: Optional[str] = None
     fetched: bool = True  # False when the store's remote couldn't be reached
+    rules: Optional["SyncReport"] = None  # the promoted rules' own merge, which rides along with every sync

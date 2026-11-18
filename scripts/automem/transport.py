@@ -69,6 +69,8 @@ def merge_upstream(report):
     for path in conflicted:
         ours, theirs = show(2, path), show(3, path)
         full = os.path.join(store_path, path)
+        parts = path.split("/", 2)  # automem/<repo folder or _rules>/<file>
+        about = report.rules if report.rules is not None and parts[1:2] == [constants.RULES_STORE_FOLDER] else report
         if path.endswith(constants.INDEX_FILE) and ours is not None and theirs is not None:
             notefiles.put(
                 full,
@@ -77,13 +79,12 @@ def merge_upstream(report):
         elif ours is not None:
             notefiles.put(full, ours)
             saved = notefiles.backup("conflict", path, theirs, "store")
-            report.backups.append(saved)
-            parts = path.split("/", 2)  # automem/<repo folder>/<note>
+            about.backups.append(saved)
             if saved and len(parts) == 3:
-                report.lost.append(syncreport.LostCopy(parts[2], "local", saved, folder=parts[1]))
+                about.lost.append(syncreport.LostCopy(parts[2], "local", saved, folder=parts[1]))
         else:
             notefiles.put(full, theirs)
-        report.conflicts.append(os.path.basename(path))
+        about.conflicts.append(os.path.basename(path))
         gitrepo.git("add", "-A", "--", path, cwd=store_path)
     if gitrepo.git(*store.GIT_ID, "commit", "-q", "--no-edit", cwd=store_path).returncode != 0:
         gitrepo.git("merge", "--abort", cwd=store_path)

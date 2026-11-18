@@ -1,15 +1,16 @@
 """Sync one repo's auto memory folder with the store, and keep the records of what happened.
 
 How the pieces fit: store.py says whether a repo syncs and where its folder in the store is,
-merge.py does the three-way merge between the two folders, and transport.py moves commits to and
-from the store's remote. Everything here runs under one lock, so two sessions never merge at once.
+merge.py does the three-way merge between the two folders (and between the promoted rules and
+theirs, on every sync of any project), and transport.py moves commits to and from the store's
+remote. Everything here runs under one lock, so two sessions never merge at once.
 """
 
 import json
 import os
 import time
 
-from automem import claudecode, constants, gitrepo, jsonfile, locks, merge, state, store, transport, usage
+from automem import claudecode, constants, gitrepo, jsonfile, locks, merge, state, store, syncreport, transport, usage
 
 MERGED_FIELDS = ("imported", "exported", "deleted_here", "conflicts", "backups", "skipped", "index_lines", "lost")
 
@@ -31,8 +32,7 @@ def run(root, push_now=False, lock_wait=60, fetch_timeout=20, naming_confirmed=F
     try:
         transport.clear_stale_git_locks()
         fetched = transport.fetch_and_fast_forward(fetch_timeout)
-        report, base = merge.merge_folders(root, key, merge.load_base(key, local))
-        jsonfile.write_json(merge.base_path(key, local), base)
+        report = merge_both(root, key, local)
         report.fetched = fetched
         report.push = None if transport.commit(key) else "commit failed"
         if push_now and report.push is None and store.has_remote():
@@ -45,13 +45,23 @@ def run(root, push_now=False, lock_wait=60, fetch_timeout=20, naming_confirmed=F
     return report
 
 
+def merge_both(root, key, local):
+    """This repo's notes, then the promoted rules, each against its own folder in the store."""
+    report, base = merge.merge_folders(root, key, merge.load_base(key, local))
+    jsonfile.write_json(merge.base_path(key, local), base)
+    rules_here = claudecode.rules_dir()
+    report.rules, base = merge.merge_rules(merge.load_base(constants.RULES_STORE_FOLDER, rules_here))
+    jsonfile.write_json(merge.base_path(constants.RULES_STORE_FOLDER, rules_here), base)
+    return report
+
+
 def merge_again(root, key, local, report):
     """The store now holds the other machine's changes too: bring them into the local folder."""
-    again, base = merge.merge_folders(root, key, merge.load_base(key, local))
-    jsonfile.write_json(merge.base_path(key, local), base)
+    again = merge_both(root, key, local)
     for name in MERGED_FIELDS:
         getattr(report, name).extend(getattr(again, name))
-    if transport.commit(key) and again.exported:
+        getattr(report.rules, name).extend(getattr(again.rules, name))
+    if transport.commit(key) and (again.exported or again.rules.exported):
         transport.push(report)
 
 
@@ -67,6 +77,7 @@ def record(root, report):
     """Write down what this sync did: the status /automem-plus:status reads, the copies that lost a
     conflict (for /automem-plus:reconcile), and the usage log."""
     rid = gitrepo.repo_hash(root)
+    rules = report.rules or syncreport.SyncReport()
     status = {
         "ts": round(time.time()),
         "repo": rid,
@@ -75,16 +86,18 @@ def record(root, report):
         "conflicts": report.conflicts,
         "skipped": report.skipped,
         "backups": report.backups,
+        "rules": {"conflicts": rules.conflicts, "skipped": rules.skipped, "backups": rules.backups},
     }
     jsonfile.write_json(os.path.join(state.state_dir(), "sync_status.json"), status)  # the latest sync of any project
     jsonfile.write_json(status_path(rid), status)
     first = os.path.join(state.state_dir(), "sync_first.json")
     if not os.path.exists(first):
         jsonfile.write_json(first, {"ts": status["ts"]})
-    if report.lost:
-        own_folder = store.folder_name(gitrepo.remote_key(root))
+    lost = [(copy, store.folder_name(gitrepo.remote_key(root))) for copy in report.lost]
+    lost += [(copy, constants.RULES_STORE_FOLDER) for copy in rules.lost]
+    if lost:
         with open(lost_copy_log(), "a") as f:
-            for copy in report.lost:
+            for copy, own_folder in lost:
                 f.write(
                     json.dumps(
                         {
@@ -102,6 +115,10 @@ def record(root, report):
             usage.log_usage("sync", "imported", repo=rid, file=rel)
     for rel in report.skipped:
         usage.log_usage("sync", "skipped_secret", repo=rid, file=rel)
+    for rel in rules.imported:
+        usage.log_usage("sync", "rule_imported", file=rel)
+    for rel in rules.skipped:
+        usage.log_usage("sync", "rule_skipped_secret", file=rel)
 
 
 def lost_copies(root, since=0):

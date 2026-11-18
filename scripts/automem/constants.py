@@ -19,6 +19,8 @@ DEFAULT_STORE_DIR = "~/.claude/memory-store"
 
 HANDOFF_FILE = "handoff.md"
 INDEX_FILE = "MEMORY.md"
+RULE_PREFIX = "automem-"  # promoted rules carry it; rules without it are the user's own and never touched
+RULES_STORE_FOLDER = "_rules"  # promoted rules' folder in the store; repo folders are host__owner__repo
 
 CANARY_COST = "about $0.07 on Haiku"  # six short calls; what the user is told before it runs
 

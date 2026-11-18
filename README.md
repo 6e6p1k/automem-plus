@@ -14,7 +14,7 @@ It's three hooks and a dozen slash commands. It makes no model calls of its own 
 |---|---|
 | A "where we are" note gets written sometimes and then goes stale | **Handoff note:** one note per branch with Goal, Where we are, Tried and failed, Open decisions, Next steps. Claude rewrites it when you say you're done, after a push, or on `/automem-plus:handoff` |
 | Facts mentioned while asking for something else aren't saved | **Passing facts:** "our CI only runs on Fridays" gets saved like an explicit "remember this" |
-| Notes live on one machine, under one clone path | **Sync:** notes travel through a private git repo, matched by the project's origin URL |
+| Notes live on one machine, under one clone path | **Sync:** notes travel through a private git repo, matched by the project's origin URL. Preferences you promote to user-level rules travel too |
 | Two machines can leave the same fact under two names, or notes that disagree | **Reconcile:** `/automem-plus:reconcile` has Claude unite them. It proposes, you agree, it edits |
 | Nothing tells you a status note is out of date | **Nudge:** a line after a turn when you committed and the handoff is older than the commit |
 | No way to tell which memory habits pay off | **Review:** a local usage log, and a keep-or-retire suggestion per feature |
@@ -52,7 +52,7 @@ It shows whether the rules were injected, whether a handoff exists, and whether 
 
 | Hook | What it does | Cost |
 |---|---|---|
-| Session start | Adds the two rules to Claude's context. In a git repo that syncs, it also pulls and merges notes from the store (bounded to a few seconds) | The rules' text, about 550 tokens |
+| Session start | Adds the two rules to Claude's context. In a git repo that syncs, it also pulls and merges notes and promoted rules from the store (bounded to a few seconds) | The rules' text, about 550 tokens |
 | Your prompt | Sees the plugin's commands before Claude does. It answers most of them itself and blocks the prompt; `handoff` and `reconcile` pass through to Claude with extra instructions | None for the answered ones: no model turn, and nothing added to Claude's context |
 | End of each turn | Reads the transcript for which notes were read or written, shows a notice if one applies, and pushes notes in the background if any changed | None |
 
@@ -92,12 +92,14 @@ On a second machine, install the plugin and run step 1 with the same URL. The ow
 - **First seen on both sides:** the newer copy wins and the other is saved.
 - **`MEMORY.md`:** merged line by line. Lines either side removed stay removed, and new lines from both are kept.
 
+**Promoted rules travel too.** `/automem-plus:promote` moves a preference out of one project's memory into `~/.claude/rules/automem-<note>.md`, which every project loads. The note's deletion syncs, so the rule does as well: every sync of any project also merges the `automem-*.md` files at the top of `~/.claude/rules/` with the store's `automem/_rules/` folder, which belongs to no repo. The merge is the one notes get: a rule changed on one side wins, a rule both machines changed keeps the local copy and saves the other, and deleting a rule on one machine deletes it on the others after a backup. Rules without the `automem-` prefix are yours and are never read, written or deleted.
+
 **What keeps it safe:**
 
-- Before a note is overwritten or deleted by an import, the local copy is saved under the state folder's `backups/`.
+- Before a note or a promoted rule is overwritten or deleted by an import, the local copy is saved under the state folder's `backups/`.
 - There is no `git reset` anywhere. A rejected push is merged, never forced.
-- An emptied memory folder or a re-created store is never read as "delete everything".
-- A note that looks like it holds a credential is never pushed, and neither is its index line. This is pattern matching, so treat it as a safety net, not a guarantee.
+- An emptied memory folder or a re-created store is never read as "delete everything". The rules folder is the exception for emptying: deleting your last promoted rule is a deletion like any other.
+- A note or promoted rule that looks like it holds a credential is never pushed, and neither is its index line. This is pattern matching, so treat it as a safety net, not a guarantee.
 - Sync turns itself off when `autoMemoryDirectory` is set at user or project level, because then the folder isn't one repo's alone.
 
 ## Uniting memory from two machines
@@ -130,13 +132,13 @@ Each feature in [`features.json`](features.json) declares up front what "used" m
 | Command | What it does | Answered by |
 |---|---|---|
 | `/automem-plus:handoff` | Claude updates the handoff note now | Claude |
-| `/automem-plus:status` | Is it working here: rules, handoff, sync, anything waiting | the hook |
+| `/automem-plus:status` | Is it working here: rules, handoff, sync, promoted rules, anything waiting | the hook |
 | `/automem-plus:review` | Which features and notes earn their keep | the hook |
 | `/automem-plus:reconcile [all]` | Claude unites memory merged from several machines. `all` repeats copies from earlier runs | Claude |
 | `/automem-plus:sync [on\|off]` | This repo's sync. `on` opts it in, `off` keeps it local-only | the hook |
 | `/automem-plus:store <git-url>\|init` | Clone your store repo. `init` makes a local one | the hook |
 | `/automem-plus:owner <github-name>` | Repos owned by this account sync automatically | the hook |
-| `/automem-plus:promote [<note>]` | List preference notes, or move one into `~/.claude/rules/` so every project gets it | the hook |
+| `/automem-plus:promote [<note>]` | List preference notes, or move one into `~/.claude/rules/` so every project gets it, on every machine that syncs | the hook |
 | `/automem-plus:retire <feature>` | Turn a feature off | the hook |
 | `/automem-plus:enable <feature>` | Turn a feature back on | the hook |
 | `/automem-plus:canary` | Check whether built-in memory now covers these features | the hook |
@@ -161,7 +163,7 @@ Thresholds such as "a working session is three or more prompts" are named in [`s
 
 ## Privacy and security
 
-- **Nothing is sent anywhere except your own store.** Notes go to the git remote you configured, and only for projects you opted in. There is no telemetry.
+- **Nothing is sent anywhere except your own store.** Notes go to the git remote you configured, and only for projects you opted in. Promoted rules (`~/.claude/rules/automem-*.md`) go there too whenever any project syncs; the rest of `~/.claude/rules/` is never read. There is no telemetry.
 - **The usage log holds no note content.** It records timestamps, event names, note file names (a handoff's name includes the branch), a hash of the repo's origin, and the type of an error when a sync fails. It stays on the machine.
 - **The transcript is read locally,** only to find tool calls that touched the memory folder.
 - **Hooks run as you.** Like any Claude Code plugin with hooks, this one runs Python on your machine with your permissions on every session. The code is about 2,500 lines in [`scripts/`](scripts/); read it before installing.
@@ -174,7 +176,8 @@ Thresholds such as "a working session is three or more prompts" are named in [`s
 - **Usage counting reads command text.** A note counts as read or written when a tool call names it: by full path, by a variable set in the same command, by a glob, or by a bare name after `cd` into the memory folder. A variable set in an earlier command, and edits made by a script inside a heredoc, aren't counted.
 - **Facts used straight from their index line aren't counted,** because the note is never opened. The passing-facts rule therefore has no automatic verdict; the canary judges it.
 - **The memory folder's name is inferred.** Claude Code doesn't document how it names project folders, so sync writes only into a folder that already exists or that the session's own transcript path confirms.
-- **Deleting every note doesn't propagate.** It's indistinguishable from a wiped folder, so the notes come back. Delete them one at a time.
+- **Deleting every note doesn't propagate.** It's indistinguishable from a wiped folder, so the notes come back. Delete them one at a time. This includes promoting the only note a project has: it comes back on the next sync, next to its new rule.
+- **Promoted rules move only with a project's sync.** A machine picks them up at the first session in a project that syncs.
 - **Index lines arriving at session start:** Claude Code loads `MEMORY.md` before hooks run, so lines that just arrived are passed to Claude in the session context instead.
 
 ## Troubleshooting

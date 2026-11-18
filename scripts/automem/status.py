@@ -3,7 +3,7 @@
 import os
 import time
 
-from automem import claudecode, gitrepo, jsonfile, merge, plugin, reconcile, state, store, sync
+from automem import claudecode, gitrepo, jsonfile, merge, notefiles, plugin, reconcile, state, store, sync
 
 
 def ago(ts, now=None):
@@ -42,6 +42,26 @@ def sync_lines(label, record):
     if record.get("skipped"):
         lines.append(f"      not synced, looked like a secret: {', '.join(record['skipped'])}")
     return lines
+
+
+def rules_line(latest):
+    """One line on the promoted rules: how many, whether they travel, and what the last sync left behind."""
+    folder = claudecode.rules_dir()
+    count = len(notefiles.rule_files(folder))
+    if not count:
+        return f"{IDLE} Promoted rules: none yet (/automem-plus:promote lists the candidates)"
+    where = f"{count} in {folder}"
+    if not (plugin.feature_on("sync") and store.store_ready()):
+        return f"{IDLE} Promoted rules: {where}, on this machine only (sync is off)"
+    last = latest.get("rules") or {}
+    if last.get("skipped"):
+        return f"{WARN} Promoted rules: {where}; not synced, looked like a secret: {', '.join(last['skipped'])}"
+    kept = (
+        f"; both machines changed {', '.join(last['conflicts'])}, one copy was kept, the other saved"
+        if last.get("conflicts")
+        else ""
+    )
+    return f"{OK} Promoted rules: {where}, synced through the store with every sync{kept}"
 
 
 def describe(root=None, handoff_file=None):
@@ -92,6 +112,7 @@ def describe(root=None, handoff_file=None):
                 f"{WARN} Waiting for reconcile: {waiting} note{'' if waiting == 1 else 's'} differed between "
                 f"machines (/automem-plus:reconcile has Claude unite them)"
             )
+    lines.append(rules_line(latest))
     if not latest:
         lines.append(f"{IDLE} Sync hasn't run on this machine.")
     elif not root:

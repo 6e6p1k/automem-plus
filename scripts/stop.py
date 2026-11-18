@@ -12,16 +12,31 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from automem import claudecode, constants, gitrepo, jsonfile, nudges, session, state, store, transcript, usage  # noqa: E402
+from automem import (  # noqa: E402
+    claudecode,
+    constants,
+    gitrepo,
+    jsonfile,
+    notefiles,
+    nudges,
+    session,
+    state,
+    store,
+    transcript,
+    usage,
+)
 
 
 def start_sync(root, folder, session_state):
-    """Sync in the background when a note changed since this session last synced."""
+    """Sync in the background when a note or a promoted rule changed since this session last synced."""
     if not os.path.isdir(folder):
         return
-    newest = max(
-        (os.path.getmtime(os.path.join(base, name)) for base, _, names in os.walk(folder) for name in names), default=0
-    )
+    rules = claudecode.rules_dir()
+    changed = [os.path.join(base, name) for base, _, names in os.walk(folder) for name in names]
+    changed += [os.path.join(rules, name) for name in notefiles.rule_files(rules)]
+    if os.path.isdir(rules):
+        changed.append(rules)  # a deleted rule only shows in the folder's own time
+    newest = max((os.path.getmtime(path) for path in changed), default=0)
     if newest <= session_state.get("synced", 0):
         return
     try:

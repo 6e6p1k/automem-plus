@@ -27,3 +27,25 @@ def test_promote_lists_preferences_and_moves_one_to_user_rules(repo, env):
     assert read(os.path.join(folder, "MEMORY.md")) == "- [Deploy](deploy.md) — Vercel\n"
     again = run_hook("prompt.py", {"session_id": "s", "cwd": repo, "prompt": "::automem promote subagent-budget"})
     assert "No note" in again["reason"]
+
+
+BUDGET_NOTE = (
+    '---\nname: budget\ndescription: "One subagent at most"\nmetadata:\n  type: feedback\n---\n\n'
+    "Use at most one subagent.\n"
+)
+
+
+def test_a_rule_promoted_on_one_machine_reaches_the_other(machines):
+    a, b = machines("a"), machines("b")
+    a.use().write("budget.md", BUDGET_NOTE)
+    a.write("ci.md", "CI runs on Fridays\n")  # an emptied folder is never read as a deletion, so keep a note
+    a.write("MEMORY.md", "- [Budget](budget.md) — one subagent\n- [CI](ci.md) — Fridays\n")
+    a.sync()
+    b.sync()
+    assert b.use().read("budget.md") == BUDGET_NOTE
+    assert "Moved to" in promote.promote(a.use().repo, "budget")
+    a.sync()
+    b.sync()
+    assert b.use().read("budget.md") is None  # the note's deletion syncs...
+    rule = os.path.join(str(b.config), "rules", "automem-budget.md")
+    assert os.path.exists(rule) and "Use at most one subagent." in read(rule)  # ...and so does the rule

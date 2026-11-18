@@ -17,6 +17,12 @@ synced MEMORY.md lines. Git doesn't keep file times, so the merge doesn't rely o
 The base isn't trusted when the store was re-created (a different root commit) or when one side
 has no notes at all while the base lists some: an emptied folder is never read as "delete all".
 Backups go to the state folder's backups/.
+
+Promoted rules (<config dir>/rules/automem-*.md) are merged the same way against the store's
+automem/_rules/, which belongs to no repo. Only automem-*.md files at the top of either folder are
+ever listed, so the user's own rules are never read or written. The one difference: the rules
+folder can't be emptied by a project move, so deleting the last promoted rule is a deletion like
+any other instead of a reason to distrust the base.
 """
 
 import copy
@@ -74,11 +80,11 @@ def load_base(key, local):
     return data
 
 
-def trusted(base, local_notes, store_notes, root_commit):
+def trusted(base, local_notes, store_notes, root_commit, guard_empty=True):
     """Drop a base that would turn an emptied folder or a re-created store into mass deletions."""
     entries = base["files"].values()
-    lost_local = any(e.get("l") for e in entries) and not local_notes
-    lost_store = any(e.get("s") for e in entries) and not store_notes
+    lost_local = guard_empty and any(e.get("l") for e in entries) and not local_notes
+    lost_store = guard_empty and any(e.get("s") for e in entries) and not store_notes
     new_store = base.get("root") not in (None, root_commit)
     if lost_local or lost_store or new_store:
         return {"root": root_commit, "index": None, "files": {}}
@@ -164,13 +170,12 @@ class _NoteMerge:
             self.report.lost.append(syncreport.LostCopy(rel, kept, saved))
 
 
-def merge_folders(root, key, base):
-    """Three-way merge between the auto memory folder and the store folder. Returns (report, new base)."""
-    local, store_folder = claudecode.memory_dir(root), store.store_folder(key)
+def _settle_all(key, local, store_folder, base, listing, guard_empty=True):
+    """Settle every file listing() finds on either side or the base remembers. Returns (report, new base)."""
     report = syncreport.SyncReport()
-    local_notes, store_notes = notefiles.files(local), notefiles.files(store_folder)
+    local_notes, store_notes = listing(local), listing(store_folder)
     root_commit = store.store_root_commit()
-    base = trusted(copy.deepcopy(base), local_notes, store_notes, root_commit)
+    base = trusted(copy.deepcopy(base), local_notes, store_notes, root_commit, guard_empty)
     base["root"] = root_commit
     known = base["files"]
     notes = _NoteMerge(key, local, store_folder, report)
@@ -181,7 +186,24 @@ def merge_folders(root, key, base):
             known.pop(rel, None)
         else:
             known[rel] = {"l": local_sum, "s": store_sum}
-    report.index_lines, base["index"] = merge_index(key, local, store_folder, base.get("index"), known, report)
+    return report, base
+
+
+def merge_folders(root, key, base):
+    """Three-way merge between the auto memory folder and the store folder. Returns (report, new base)."""
+    local, store_folder = claudecode.memory_dir(root), store.store_folder(key)
+    report, base = _settle_all(key, local, store_folder, base, notefiles.files)
+    report.index_lines, base["index"] = merge_index(key, local, store_folder, base.get("index"), base["files"], report)
+    report.backups = [path for path in report.backups if path]
+    return report, base
+
+
+def merge_rules(base):
+    """Three-way merge between the promoted rules here and the store's rules folder. Returns (report, new base)."""
+    folder = constants.RULES_STORE_FOLDER
+    report, base = _settle_all(
+        folder, claudecode.rules_dir(), store.store_folder(folder), base, notefiles.rule_files, guard_empty=False
+    )
     report.backups = [path for path in report.backups if path]
     return report, base
 

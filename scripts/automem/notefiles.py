@@ -34,6 +34,22 @@ def files(folder):
     return found - {constants.INDEX_FILE}
 
 
+def rule_files(folder):
+    """The promoted rules in a rules folder: automem-*.md at its top level. Nothing else there is ever read."""
+    try:
+        names = os.listdir(folder)
+    except OSError:
+        return set()
+    return {
+        name
+        for name in names
+        if name.startswith(constants.RULE_PREFIX)
+        and name.endswith(".md")
+        and os.path.isfile(os.path.join(folder, name))
+        and not os.path.islink(os.path.join(folder, name))
+    }
+
+
 def put(path, data):
     if data is None:
         if os.path.exists(path):

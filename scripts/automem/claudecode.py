@@ -14,6 +14,11 @@ def config_dir():
     return os.path.expanduser(os.environ.get("CLAUDE_CONFIG_DIR") or "~/.claude")
 
 
+def rules_dir():
+    """The user-level rules folder Claude Code loads in every project."""
+    return os.path.join(config_dir(), "rules")
+
+
 SCOPES = ("user", "project", "local")  # in the order Claude Code applies them: the last one that sets a key wins
 
 
